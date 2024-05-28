@@ -1,15 +1,18 @@
-import { Container, VStack, Input, Button, Box } from "@chakra-ui/react";
+import { Container, VStack, Input, Button, Box, Spinner, Alert, AlertIcon } from "@chakra-ui/react";
+import { usePosts, useAddPost } from '../integrations/supabase/api';
 import { useState } from "react";
 import NavBar from "../components/NavBar";
 import Post from "../components/Post";
 
 const Index = () => {
-  const [posts, setPosts] = useState([]);
+  const { data: posts, isLoading, isError } = usePosts();
   const [newPost, setNewPost] = useState("");
+
+  const addPost = useAddPost();
 
   const handlePost = () => {
     if (newPost.trim() !== "") {
-      setPosts([...posts, newPost]);
+      addPost.mutate({ title: newPost, body: newPost });
       setNewPost("");
     }
   };
@@ -27,8 +30,15 @@ const Index = () => {
           <Button onClick={handlePost} colorScheme="blue">
             Post
           </Button>
-          {posts.map((post, index) => (
-            <Post key={index} content={post} />
+          {isLoading && <Spinner />}
+          {isError && (
+            <Alert status="error">
+              <AlertIcon />
+              Error fetching posts
+            </Alert>
+          )}
+          {posts && posts.map((post) => (
+            <Post key={post.id} content={post.body} />
           ))}
         </VStack>
       </Container>
