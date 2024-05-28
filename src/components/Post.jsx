@@ -1,40 +1,48 @@
-import { Box, Text, HStack, IconButton } from "@chakra-ui/react";
+import { Box, Text, HStack, IconButton, Spinner, Alert, AlertIcon } from "@chakra-ui/react";
+import { useReactions, useAddReaction } from '../integrations/supabase/api';
 import { FaThumbsUp, FaHeart, FaLaugh } from "react-icons/fa";
-import { useState } from "react";
 
-const Post = ({ content }) => {
-  const [reactions, setReactions] = useState({ thumbsUp: 0, heart: 0, laugh: 0 });
+
+const Post = ({ content, postId }) => {
+  const { data: reactions, isLoading, isError } = useReactions(postId);
+  const addReaction = useAddReaction();
 
   const handleReaction = (type) => {
-    setReactions((prevReactions) => ({
-      ...prevReactions,
-      [type]: prevReactions[type] + 1,
-    }));
+    addReaction.mutate({ post_id: postId, emoji: type });
   };
 
   return (
     <Box borderWidth="1px" borderRadius="lg" p={4} mb={4} width="100%">
       <Text mb={4}>{content}</Text>
-      <HStack spacing={4}>
-        <IconButton
-          aria-label="Thumbs Up"
-          icon={<FaThumbsUp />}
-          onClick={() => handleReaction("thumbsUp")}
-        />
-        <Text>{reactions.thumbsUp}</Text>
-        <IconButton
-          aria-label="Heart"
-          icon={<FaHeart />}
-          onClick={() => handleReaction("heart")}
-        />
-        <Text>{reactions.heart}</Text>
-        <IconButton
-          aria-label="Laugh"
-          icon={<FaLaugh />}
-          onClick={() => handleReaction("laugh")}
-        />
-        <Text>{reactions.laugh}</Text>
-      </HStack>
+      {isLoading && <Spinner />}
+      {isError && (
+        <Alert status="error">
+          <AlertIcon />
+          Error fetching reactions
+        </Alert>
+      )}
+      {reactions && (
+        <HStack spacing={4}>
+          <IconButton
+            aria-label="Thumbs Up"
+            icon={<FaThumbsUp />}
+            onClick={() => handleReaction("👍")}
+          />
+          <Text>{reactions.filter(r => r.emoji === "👍").length}</Text>
+          <IconButton
+            aria-label="Heart"
+            icon={<FaHeart />}
+            onClick={() => handleReaction("❤️")}
+          />
+          <Text>{reactions.filter(r => r.emoji === "❤️").length}</Text>
+          <IconButton
+            aria-label="Laugh"
+            icon={<FaLaugh />}
+            onClick={() => handleReaction("😂")}
+          />
+          <Text>{reactions.filter(r => r.emoji === "😂").length}</Text>
+        </HStack>
+      )}
     </Box>
   );
 };
